@@ -17,7 +17,9 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
+          
           script: |
-            cd /home/ubuntu/Two-heartes
-            git pull origin main
-            sudo systemctl restart movieapp
+             cd /home/ubuntu/Two-heartes
+             git fetch origin
+             git reset --hard origin/main
+             sudo systemctl restart movieapp
