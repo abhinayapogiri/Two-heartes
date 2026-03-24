@@ -17,6 +17,6 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/home/ubuntu/Two-heartes
+            cd /home/ubuntu/Two-heartes
             git pull origin main
             sudo systemctl restart movieapp
