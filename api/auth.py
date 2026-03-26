@@ -45,6 +45,9 @@ async def request_otp(payload: LoginRequest, db: Session = Depends(get_db)):
 
     if purpose == OTPPurpose.RESET and not is_existing_user:
         raise HTTPException(status_code=404, detail="No account found with this email")
+        
+    if purpose == OTPPurpose.SIGNUP and is_existing_user:
+        raise HTTPException(status_code=400, detail="Already registered please sign in")
 
     otp = random.randint(100000, 999999)
     print(f" Your ShowGO OTP for {identifier} ({purpose}): {otp}")
@@ -83,6 +86,7 @@ def verify_otp(
     otp = str(payload.otp)
     role = payload.role
     password = payload.password
+    purpose = payload.purpose
     
     if not email and not mobile:
         raise HTTPException(status_code=400, detail="Email address is required")
@@ -103,13 +107,18 @@ def verify_otp(
 
     is_new_user = False
     if not user:
+        if purpose != OTPPurpose.SIGNUP:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        if not password:
+            raise HTTPException(status_code=400, detail="Password is required for registration")
+            
         is_new_user = True
         # Create new user with appropriate role
         is_admin = (role == "ADMIN" or role == UserRole.ADMIN)
         is_merchant = (role == "MERCHANT" or role == UserRole.MERCHANT)
         
-        # Hash password if provided
-        hashed_pw = get_password_hash(password) if password else None
+        hashed_pw = get_password_hash(password)
         
         user = User(
             email=email,
@@ -123,13 +132,18 @@ def verify_otp(
         db.commit()
         db.refresh(user)
     else:
+        if purpose == OTPPurpose.SIGNUP:
+            raise HTTPException(status_code=400, detail="Already registered please sign in")
+            
         # User exists, check privileges if creating admin session
         if (role == "ADMIN" or role == UserRole.ADMIN) and not user.is_admin:
              raise HTTPException(status_code=403, detail="User exists but is not an admin")
         
-        if password:
-             user.password_hash = get_password_hash(password)
-             db.commit()
+        if purpose == OTPPurpose.RESET:
+            if not password:
+                raise HTTPException(status_code=400, detail="New password is required for reset")
+            user.password_hash = get_password_hash(password)
+            db.commit()
 
     access_token = create_access_token(subject=str(user.id))
 

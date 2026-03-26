@@ -9,6 +9,7 @@ class UserRole(str, Enum):
 class OTPPurpose(str, Enum):
     LOGIN = "LOGIN"
     RESET = "RESET"
+    SIGNUP = "SIGNUP"
 
 class LoginRequest(BaseModel):
     email: str | None = None
@@ -23,6 +24,7 @@ class VerifyOTPRequest(BaseModel):
     otp: int
     password: str | None = None
     role: UserRole = UserRole.USER
+    purpose: OTPPurpose = OTPPurpose.LOGIN
 
 class SetPasswordRequest(BaseModel):
     password: str
